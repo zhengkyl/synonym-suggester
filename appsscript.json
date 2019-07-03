@@ -1,0 +1,6 @@
+{
+  "timeZone": "America/Indiana/Marengo",
+  "dependencies": {
+  },
+  "exceptionLogging": "STACKDRIVER"
+}

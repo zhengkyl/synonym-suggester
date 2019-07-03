@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link href="https://ssl.gstatic.com/docs/script/css/add-ons.css" rel="stylesheet">
+    <?!= HtmlService.createHtmlOutputFromFile("css").getContent(); ?>
+  </head>
+  <body>
+    <div id = "tab-container">
+      <div class= "tab" id = "main-tab" onclick="openTab(0)">Main</div>
+      <div class= "tab selected" id = "settings-tab" onclick="openTab(1)">Settings</div>
+    </div>
+    
+    
+    <div class = "tab-content">
+    
+      <div>
+        <button class ="blue" id="scan-button" onclick="invokeGetText()">Scan</button>
+      </div>
+      
+      <div id="words-table-parent">
+        <p class = "table-title">Frequent Words
+        
+        <div id = "words-table">
+          <p >Press scan to begin
+        </div>
+        
+      </div>
+      
+      <div id = "synonyms-list-parent">
+        <p class = "table-title">Replace With
+        
+        <div id = "synonyms-table">
+          <p>Nothing to see here.
+        </div>
+        
+      </div>
+      
+      
+      
+    </div>
+    
+    <div class = "tab-content">
+
+      <div id = "colors-table-parent">
+         <p class = "table-title">Highlight Colors 
+        <table id ="colors-table">
+            
+        </table>
+        <button id = "add-highlight-color-button" onclick="addHighlightColor('#000000')">+</button>
+        <div id = "highlight-colors-update">
+          <button onclick = "saveHighlightColors()" id = "save-highlight-colors" class = "blue">Save</button>
+          <button onclick = "revertHighlightColors()" id = "revert-highlight-colors">Revert</button>
+        </div>
+      </div>
+      <div id = "excluded-list-parent">
+      <p class = "table-title">Ignored Words
+        <input type="text" id = "excluded-words-input">
+        <button id = "add-excluded-word-button" onclick="addExcludedWord()">Add</button>
+        <ul id = "excluded-words-list">
+        </ul>
+      </div>
+      
+    </div>
+    
+    
+    
+   <?!= HtmlService.createHtmlOutputFromFile("javascript").getContent(); ?>
+
+  </body>
+</html>
+
+

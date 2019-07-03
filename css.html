@@ -1,0 +1,171 @@
+<style>
+  * {
+    box-sizing: border-box;
+    font-family: arial, sans-serif;
+  }
+  body{
+    margin:0px 1%;
+  }
+  
+  #tab-container{
+    height:5%;
+    padding:0px;
+    margin:2% 1%;
+  }
+  
+  #excluded-list-parent{
+    width: 55%;
+    float:right;
+    clear:right;
+  }
+  
+  #colors-table-parent{
+    width: 45%;
+    float:left;
+    clear:left;
+  }
+  
+  #excluded-words-input{
+    width:65%;
+  }
+  
+  #add-excluded-word-button{
+    width:30%;
+    min-width:0px;
+  }
+  
+  #excluded-words-list li:hover{
+    text-decoration: line-through;
+    color: #939393;
+  }
+  
+  #add-highlight-color-button{
+    display:block;
+  }
+
+  #save-highlight-colors{
+    min-width:0px;
+    margin:2px;
+  }
+  
+  #revert-highlight-colors{
+    min-width:0px;
+    font-size: 10px;
+    margin: 2px;
+  }
+  
+  #words-table-parent{
+    width: 55%;
+    float: left;
+    margin-right:1%;
+  }
+  #synonyms-list-parent{
+    width: 44%
+    float: right;
+  }
+  #words-table{
+    overflow-x:hidden;
+    overflow-y:auto;
+    height:88vh;
+  }
+  #synonyms-table{
+    overflow-x:hidden;
+    overflow-y:auto;
+    height:88vh;
+  }
+  
+  .table-title{
+    margin:0px;    
+    font-size: 14px;
+    font-weight: bold;
+    padding:0px 2%;
+  }
+  
+
+  table{
+    word-break: break-all;
+    table-layout:fixed;
+  }
+  td:nth-child(2){
+    text-align:center;
+    width:25%;
+  }
+  
+  tr.selected { filter: brightness(95%);}
+  tr:hover.selected { filter: brightness(100%);}
+  
+  
+  tr:nth-child(even).unselected {background-color: #fafafa;}
+  tr:nth-child(odd).unselected {background-color: #fefefe;}
+  tr:hover.unselected { filter: brightness(85%);}
+  
+  
+  
+  div.tab{
+    background-color:#f2f2f2;
+    width:40%;
+    height:100%;
+  
+    border: 1px solid #dcdcdc;
+    
+    border-radius: 2px;
+    
+    font-size: 11px;
+    font-weight: bold;
+    line-height: 27px;
+    text-align: center;
+    cursor:default;
+  }
+  
+  div.selected{
+    border-bottom-width:0px;
+    background-color:#ffffff;
+    width:60%;
+    height:100%;
+  }
+  
+  div.unselected:hover{
+    background-color:#d6d6d6;
+  }
+
+  ul{
+    list-style-type:none;
+    padding-left:0px;
+  }
+  
+  li:hover{
+    background-color: #f1f1f1;
+  }
+  
+  button.red{
+    height: 27px;
+    min-width:0px;
+    margin-right:5px;
+    font-weight: bold;
+  }
+  
+  .tab-content{
+    display:none;
+  }
+  
+  #main-tab{
+    float:left;
+    background-color = #555;
+  }
+  #settings-tab{
+    float:right;
+  }
+  
+  #scan-button{
+    height:5%;
+    width:98%;
+    margin: 1%;
+  }
+  
+  button.seek{
+    margin:0px;
+    min-width:0px;
+    width:50%;
+  }
+
+</style>

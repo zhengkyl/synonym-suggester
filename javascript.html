@@ -1,0 +1,461 @@
+<script>  
+  
+  ///Variables for Highlight Colors
+  
+  var colorsParent = document.getElementById("colors-table");
+  
+  var highlightColorsUpdate = document.getElementById("highlight-colors-update");
+ 
+ //Keeps track of number of colors so that there is at least one
+  var colorsLength=0;
+  
+  //Keeps track of which color to use. Starts at -1, because it's incremented before use to test if within range
+  var highlightIndex=-1;
+  
+  //Default highlight colors 
+  var highlightColors = ["#ffc023", "#73ff22", "#21ffda", "#e520ff"];
+
+  function getSavedHighlightColors(json){
+    var test = JSON.parse(json);
+    if(test!=null){
+      highlightColors = test;
+    }
+    
+    for(var i = 0; i<highlightColors.length;i++){
+      addHighlightColor(highlightColors[i]);
+    }
+      
+    highlightColorsUpdate.style.display="none";
+  }
+  
+  google.script.run.withSuccessHandler(getSavedHighlightColors).getSavedProperty("highlightColors")
+  
+  
+  ///Variables for Excluded Words List
+  
+  var excludedWordInput = document.getElementById("excluded-words-input");
+  
+  var excludedWordsList = document.getElementById("excluded-words-list");
+  
+  var excludedWords = [];
+  
+  function getSavedExcludedWords(json){
+    var test = JSON.parse(json);
+    if(test!=null){
+      excludedWords = test;
+    }
+    
+    showExcludedWords();
+  }
+  
+  google.script.run.withSuccessHandler(getSavedExcludedWords).getSavedProperty("excludedWords");
+  
+  
+  ///Variables for main tab
+  
+  var wordsParent = document.getElementById("words-table");
+  var synonymsParent = document.getElementById("synonyms-table");
+  
+  var keepContractions = "('|’)[^A-Za-zÀ-ÖØ-öø-ÿ]|[^A-Za-zÀ-ÖØ-öø-ÿ]('|’)|[^A-Za-zÀ-ÖØ-öø-ÿ\-\'\’]";
+  //still has problems, needs more word to actually be usable. Perhaps in v2?
+  var removeContractions = "(dn)?('|’)\\w+|[^A-Za-zÀ-ÖØ-öø-ÿ]";
+  var separateContractions = false;
+  
+  var wordRangesIndex=0;
+  var wordRangesMaxIndex;
+  
+  ///Tab management Settings
+  var currentTabIndex=1;
+  document.getElementById("main-tab").click();
+ 
+ 
+ /////////SETTINGS TAB
+ 
+ function addExcludedWord(){
+   var word = excludedWordInput.value;
+   
+   var nonWordCharRegex = new RegExp(keepContractions);
+                    //Lowercase so differently capitalized words are recognized 
+   word = word.toLowerCase()
+                    //Replace all non word characters and excluded words with space
+                   .replace(nonWordCharRegex,"")
+                   //Remove spaces at beginning and end
+                   .replace(/^\s+|\s+$/g,"");
+   excludedWords.push(word);
+   excludedWords.sort();
+   showExcludedWords();
+   excludedWordInput.value="";
+   saveExcludedWords();
+ }
+ 
+ function showExcludedWords(){
+   excludedWordsList.innerHTML="";
+   
+   for(var i =0; i < excludedWords.length; i++){
+      var node = document.createElement("li");
+      var text = document.createTextNode(excludedWords[i]);
+      node.appendChild(text);
+      excludedWordsList.appendChild(node);
+      
+      var replaceCallback = (function(){
+        var index = i;
+        return function(){
+          excludedWords.splice(index,1);
+          showExcludedWords();
+          saveExcludedWords();
+        }
+        
+      })();
+      
+      node.addEventListener("click",replaceCallback);
+    }
+
+ }
+ 
+ function saveExcludedWords(){
+   google.script.run.setSavedProperty("excludedWords", JSON.stringify(excludedWords));
+ }
+ 
+ function addHighlightColor(color){
+   colorsLength++;
+   var row = colorsParent.insertRow(-1);
+    var cell = row.insertCell(0);
+    
+    var input = document.createElement("input");
+    input.setAttribute("type","color");
+    input.value = color;
+    input.className="highlightColorInput";
+    
+    function onHighlightColorsChange(){
+      highlightColorsUpdate.style.display="inline";
+     }
+     
+    input.addEventListener("input",onHighlightColorsChange);
+    
+    cell.appendChild(input);
+    
+    var closeButton = document.createElement("button");
+    var closeButtonCallback= (function(){
+      //var index = highlightColors.length-1;
+      var child = row;
+      return function(event) {
+        if(colorsLength>1){
+          //removeHighlightColor(index);
+          colorsLength--;
+          child.parentNode.removeChild(child);
+          onHighlightColorsChange();
+        }
+      }
+    })();
+     
+    closeButton.addEventListener("click",closeButtonCallback);
+    var text = document.createTextNode("X");
+    closeButton.appendChild(text);
+    closeButton.className="red";
+    
+    cell.appendChild(closeButton);
+    
+    onHighlightColorsChange();
+ }
+ 
+ function revertHighlightColors(){
+   
+   colorsParent.innerHTML = "";
+   for(var i = 0 ; i < highlightColors.length ; i++){
+     addHighlightColor(highlightColors[i]);
+   }
+   
+   highlightColorsUpdate.style.display="none";
+ }
+ 
+ function saveHighlightColors(){
+   var colors = document.getElementsByClassName("highlightColorInput");
+   var newColors = [];
+   for(var i = 0 ; i<colors.length; i++){
+     newColors.push(colors[i].value);
+   }
+   highlightColors=newColors;
+
+    highlightColorsUpdate.style.display="none";
+    
+    google.script.run.setSavedProperty("highlightColors", JSON.stringify(highlightColors));
+ }
+ 
+ 
+ //////MAIN TAB
+ 
+ function findPreviousInstance(word){
+   wordRangesIndex--;
+   if(wordRangesIndex<0){
+     wordRangesIndex=wordRangesMaxIndex;
+   }
+   
+   google.script.run.selectRange(word, wordRangesIndex);
+ }
+ 
+ function findNextInstance(word){
+   wordRangesIndex++;
+   if(wordRangesIndex>wordRangesMaxIndex){
+     wordRangesIndex=0;
+   }
+   google.script.run.selectRange(word, wordRangesIndex);
+ }
+ 
+  function invokeGetText(){
+    google.script.run.withSuccessHandler(x=>showFrequentWords(findFrequentWords(x))).getText();
+  }
+  
+  
+  function findFrequentWords(text){
+  
+    //create RegExp that matches excluded words from array
+    var nonWordCharRegex = new RegExp((separateContractions ? keepContractions : removeContractions) +"|\\b("+excludedWords.join("|")+")\\b","g");
+    //console.log(nonWordCharRegex);
+                    //Lowercase so differently capitalized words are recognized 
+    var words = text.toLowerCase()
+                    //Replace all non word characters and excluded words with space
+                    .replace(nonWordCharRegex," ")
+                    //Remove spaces at beginning and end
+                    .replace(/^\s+|\s+$/g,"")
+                    //Splits into array of words along spaces
+                    .split(/\s+/);
+                    
+    var wordsMap = {};
+    
+    words.forEach(
+      function(key){
+        if(wordsMap.hasOwnProperty(key)){
+          wordsMap[key]++;
+        }else{
+          wordsMap[key]=1;
+        }
+      }
+    );
+        
+    var sortedWordsArray = [];
+    sortedWordsArray = Object.keys(wordsMap).map(
+      function (key){
+        return{
+          name: key,
+          number: wordsMap[key]
+        } 
+      }
+    );
+    
+    sortedWordsArray.sort(
+      function (a,b) {
+        return b.number - a.number;
+      }
+    );
+    return sortedWordsArray;
+  }
+  
+  function showFrequentWords(wordsList){  
+    var table = document.createElement("table");
+    
+    wordsParent.innerHTML="";
+    wordsParent.appendChild(table);
+    
+    var listLength = wordsList.length > 50 ? 50 : wordsList.length;
+    
+    for(var i =0; i<listLength; i++){
+      var row = table.insertRow(i);
+      row.className="unselected";
+      var nameCell = row.insertCell(0);
+      var numberCell = row.insertCell(1);
+      
+      nameCell.innerHTML=wordsList[i].name;
+      numberCell.innerHTML = wordsList[i].number;
+      
+      var container = document.createElement("div");
+      
+      var findPreviousCallback = (function(){
+        var word = wordsList[i].name;
+        //Stop propagation of click event so close button doesn't retrigger word button 
+        return function(event) {
+            findPreviousInstance(word);
+            event.stopPropagation();}
+      })();
+      
+      var findNextCallback = (function(){
+        var word = wordsList[i].name;
+        //Stop propagation of click event so close button doesn't retrigger word button 
+        return function(event) {
+            findNextInstance(word);
+            event.stopPropagation();}
+      })();
+      
+      
+      function createSeekButton(callback, label){
+        var seekButton = document.createElement("button");
+        seekButton.addEventListener("click",callback);
+        seekButton.style.display="none";
+        seekButton.className="seek";
+        
+        var textNode = document.createTextNode(label);
+        seekButton.appendChild(textNode);
+        
+        return seekButton;
+      }
+      
+      var findPreviousButton = createSeekButton(findPreviousCallback, "<");
+      var findNextButton = createSeekButton(findNextCallback, ">");
+      
+      container.style.display="block";
+      container.appendChild(findPreviousButton);
+      container.appendChild(findNextButton);
+      
+      nameCell.insertAdjacentElement("beforeend", container);
+      
+      var closeButton = document.createElement("button");
+      
+      var closeButtonCallback= (function(){
+        var tr = row;
+        var word = wordsList[i].name;
+        var close = closeButton;
+        var previous = findPreviousButton;
+        var next = findNextButton;
+        closeButton.style.display="none";
+        //Stop propagation of click event so close button doesn't retrigger word button 
+        return function(event) {
+            google.script.run.unhighlightAllWordInstances(word);
+            close.style.display="none";
+            
+            previous.style.display="none";
+            next.style.display="none";
+            
+            tr.className="unselected";
+            tr.style.backgroundColor= tr.rowIndex %2 == 0 ? "initial" : "#fafafa";
+            synonymsParent.innerHTML="";
+            event.stopPropagation();}
+      })();
+       
+      closeButton.addEventListener("click",closeButtonCallback);
+      var text = document.createTextNode("X");
+      closeButton.appendChild(text);
+      closeButton.className="red";
+      nameCell.insertBefore(closeButton,nameCell.childNodes[0]);
+      
+      var wordButtonCallback= (function(){
+        var tr = row;
+        var word = wordsList[i].name;
+        //Internal reference needed b/c otherwise defaults to last in column?
+        var close = closeButton;
+        var previous = findPreviousButton;
+        var next = findNextButton;
+        return function(){
+     
+          if((highlightIndex+1) < highlightColors.length){
+            highlightIndex++;
+          }else{
+            highlightIndex=0;
+          }
+      
+          google.script.run.withSuccessHandler(saveRangesLength).highlightAllWordInstances(word, highlightColors[highlightIndex]);
+          findSynonyms(word);
+          close.style.display="inline";
+          
+          previous.style.display="inline";
+          next.style.display="inline";
+          
+          tr.style.backgroundColor=highlightColors[highlightIndex];
+          tr.className="selected";
+            
+            
+          }
+        })();
+      row.addEventListener("click", wordButtonCallback);
+    }
+    function saveRangesLength(length){
+      wordRangesMaxIndex = length-1;
+    }
+  }
+  
+  function findSynonyms(word){
+    var url = "https://api.datamuse.com/words?ml="+word;
+        
+    fetch(url).then(
+      function(response) {
+    
+        if(response.status !== 200){
+          //console.log('Looks like there was a problem. Status Code: ' + response.status);
+          return;
+        }
+        response.json().then(
+          function(data) {
+          //console.log(data);
+            if(data.length==0){
+
+              synonymsParent.innerHTML="No suggestions.";
+            }else{
+              var listLength = data.length > 100 ? 100 : data.length;
+              var synonymsArray = [listLength];
+              
+              for(var i =0; i<listLength;i++){
+                synonymsArray[i]=data[i].word;
+              }
+              
+              showSynonyms(synonymsArray);
+            
+            }
+            
+            
+          });
+      }).catch(function(err) {
+      //console.log("Fetch error", err);
+    });
+  }
+  
+  function showSynonyms(synonymsList){
+    var list = document.createElement("ul");
+    list.id = "synonyms-list";
+    
+    for(var i =0; i < synonymsList.length; i++){
+      var node = document.createElement("li");
+      var text = document.createTextNode(synonymsList[i]);
+      node.appendChild(text);
+      list.appendChild(node);
+      
+      var replaceCallback = (function(){
+        var synonym = synonymsList[i];
+        return function(){
+          google.script.run.replaceSelectedWord(synonym);
+          
+          //Replacing word destroys a namedRange, so index must be updated to reflect change in length
+          wordRangesMaxIndex--;
+          wordRangesIndex--;
+          if(wordRangesIndex<0){
+           wordRangesIndex=wordRangesMaxIndex;
+          }
+        }
+        
+      })();
+      
+      node.addEventListener("click",replaceCallback);
+      
+    }
+    synonymsParent.innerHTML="";
+    synonymsParent.appendChild(list);
+
+  }
+  
+  
+  //////////TABS CONTROLLER
+  function openTab(tabIndex){
+    if(tabIndex==currentTabIndex){
+      return;
+    }
+    
+    var tabs = document.getElementById("tab-container").children;
+    
+    tabs[currentTabIndex].classList.toggle("selected");
+    tabs[tabIndex].classList.toggle("selected");
+    
+    var pages = document.getElementsByClassName("tab-content");
+    
+    pages[currentTabIndex].style.display="none";
+    pages[tabIndex].style.display="block";
+    
+    currentTabIndex=tabIndex;
+  }
+</script>
